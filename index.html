@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>593 TucaminoalaU - Aula Virtual</title>
+    <!-- Marked.js para formatear Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- MathJax para renderizar fórmulas matemáticas y químicas -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- FontAwesome para Iconos -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- html2pdf para descargar resúmenes en PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #0F172A;
+            --primary-light: #2563EB;
+            --secondary: #F59E0B;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --sidebar-width: 280px;
+            --text-dark: #1E293B;
+            --text-light: #64748B;
+            --border: #E2E8F0;
+            
+            --color-materia: #3B82F6; 
+            --color-modulo: #8B5CF6;  
+            --color-tema: #10B981;    
+        }
+
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: var(--bg); 
+            color: var(--text-dark);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .hidden { display: none !important; }
+
+        #app-layout {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* AJUSTES A LA BARRA LATERAL PARA EVITAR TITILEO */
+        #sidebar {
+            width: var(--sidebar-width);
+            background: var(--primary);
+            color: #ECF0F1;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            z-index: 100;
+            flex-shrink: 0;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
+        }
+
+        #sidebar.collapsed { 
+            width: 0px !important; 
+            overflow: hidden; 
+            border-right: none;
+        }
+
+        .sidebar-header {
+            padding: 20px 15px; background: rgba(0,0,0,0.2);
+            display: flex; align-items: center; justify-content: space-between;
+            overflow-x: hidden;
+        }
+
+        .sidebar-brand { font-size: 18px; font-weight: 800; color: #FFF; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+
+        .btn-toggle-sidebar { background: transparent; border: none; color: #94A3B8; font-size: 18px; cursor: pointer; padding: 5px 10px; border-radius: 6px; }
+        .btn-toggle-sidebar:hover { color: white; background: rgba(255,255,255,0.1); }
+
+        .sidebar-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 15px 10px; }
+        .nav-item { display: flex; align-items: center; padding: 12px 15px; color: #94A3B8; text-decoration: none; border-radius: 10px; margin-bottom: 5px; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: #FFF; }
+        .nav-item i { margin-right: 12px; width: 20px; text-align: center; }
+
+        .tree-subject { margin-bottom: 5px; }
+        .tree-subject-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; color: var(--color-materia); border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 16px; }
+        .tree-subject-header:hover { background: rgba(255,255,255,0.05); }
+        .tree-modulos { padding-left: 15px; display: none; }
+        .tree-modulos.open { display: block; }
+        .tree-modulo-header { font-size: 14px; color: var(--color-modulo); padding: 8px 12px; cursor: pointer; font-weight: 700; margin-top: 5px; }
+        .tree-modulo-header:hover { filter: brightness(1.2); }
+        .tree-topics { padding-left: 15px; display: none; }
+        .tree-topics.open { display: block; }
+        .tree-topic-item { padding: 6px 12px; font-size: 13px; color: var(--color-tema); border-radius: 6px; cursor: pointer; display: block; text-decoration: none; margin: 2px 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tree-topic-item:hover { filter: brightness(1.2); background: rgba(255,255,255,0.08); }
+
+        #main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background: var(--bg); width: 100%; }
+        .top-navbar { background: white; padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 90; }
+        .top-navbar-left { display: flex; align-items: center; gap: 15px; }
+        .content-container { padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+        #top-title { margin: 0; font-size: 16px; font-weight: bold; }
+
+        button { background: var(--primary-light); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        button:hover { background: #1D4ED8; }
+        button:disabled { background: #CBD5E0; cursor: not-allowed; }
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: #DC2626; }
+        .btn-outline { background: transparent; color: var(--text-dark); border: 1px solid var(--border); }
+        .btn-outline:hover { background: #F1F5F9; }
+
+        .video-wrapper { position: relative; width: 100%; max-width: 900px; margin: 20px 0; display: inline-block; }
+        .video-box { background: black; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.15); width: 100%; }
+        video { width: 100%; display: block; max-height: 500px; }
+
+        .titulo-animado {
+            font-size: 38px;
+            font-weight: 900;
+            margin-top: 0;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, var(--primary-light), var(--color-modulo), var(--color-tema), var(--primary-light));
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientText 4s linear infinite;
+            text-shadow: 2px 4px 15px rgba(37, 99, 235, 0.15);
+        }
+
+        @keyframes gradientText {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .instruction-card { background: white; border-radius: 16px; padding: 25px; border: 1px solid var(--border); margin-top: 20px; }
+
+        .progress-legend { display: flex; gap: 20px; background: white; padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+        .dot-green { background: var(--success); }
+        .dot-yellow { background: var(--warning); }
+        .dot-red { background: var(--danger); }
+
+        .pista-container { 
+            display: flex; flex-wrap: nowrap; overflow-x: auto; align-items: center; 
+            gap: 20px; justify-content: space-around;
+            padding: 70px 30px; background: #475569; border-radius: 16px; 
+            position: relative; margin-top: 20px; 
+            border: 5px solid #CBD5E1; 
+            min-height: 220px;
+        }
+        .pista-container::before {
+            content: ""; position: absolute; top: 50%; left: 0; width: 100%; height: 8px;
+            background-image: linear-gradient(to right, #FFF 50%, transparent 50%);
+            background-size: 50px 100%; transform: translateY(-50%); z-index: 1;
+        }
+
+        .pista-estacion { 
+            display: flex; flex-direction: column; align-items: center; 
+            text-align: center; width: 100%; min-width: 130px; max-width: 180px; 
+            flex: 1; z-index: 2; flex-shrink: 0; position: relative;
+        }
+        
+        .coche { font-size: 45px; text-shadow: 2px 2px 4px rgba(0,0,0,0.4); position: absolute; top: -60px; z-index: 3; transform: scaleX(-1); display: inline-block; }
+        .info-tema { padding: 15px; border-radius: 12px; border: 4px solid; font-size: 13px; width: 100%; font-weight: 800; box-shadow: 0 4px 10px rgba(0,0,0,0.3); word-wrap: break-word; color: white; }
+        .estado-rojo { background-color: var(--danger); border-color: #991B1B; }
+        .estado-amarillo { background-color: var(--warning); border-color: #B45309; color: #1E293B; }
+        .estado-verde { background-color: var(--success); border-color: #065F46; }
+        .meta-bandera { display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 900; text-align: center; position: relative; z-index: 2; flex: 1; min-width: 90px; max-width: 120px; }
+        .meta-bandera span { font-size: 45px; filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.5)); }
+
+        .tabs-container { display: flex; gap: 10px; border-bottom: 2px solid var(--border); margin-bottom: 20px; overflow-x: auto; }
+        .tab-btn { background: transparent; color: var(--text-light); border: none; padding: 12px 20px; font-weight: 600; border-radius: 8px 8px 0 0; white-space: nowrap; }
+        .tab-btn.active { background: white; color: var(--primary-light); border-bottom: 3px solid var(--primary-light); }
+
+        .login-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); max-width: 420px; margin: 60px auto; width: 100%; text-align: center; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 5px; }
+        .input-text, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; box-sizing: border-box; background: var(--bg); }
+        .quiz-option { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 15px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .quiz-option input { transform: scale(1.2); }
+
+        .flex-horizontal { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; justify-content: flex-start; }
+        .enlace-lectura { display: inline-block; background: var(--primary); color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
+        .enlace-lectura:hover { background: var(--primary-light); transform: translateY(-2px); }
+
+        /* ESTILOS PARA ACORDEÓN */
+        .accordion-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            cursor: pointer;
+            padding: 16px 20px;
+            width: 100%;
+            text-align: left;
+            border: none;
+            outline: none;
+            transition: 0.3s;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .accordion-header:hover {
+            filter: brightness(1.1);
+        }
+        .accordion-content {
+            padding: 20px;
+            background-color: white;
+            display: none;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        /* NUEVO: Contenedor para botones horizontales */
+        .accordion-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .accordion-row .accordion-header {
+            margin-top: 0;
+            flex: 1;
+            justify-content: center;
+            text-align: center;
+            font-size: 14px;
+            padding: 12px 10px;
+        }
+
+        @media (max-width: 768px) {
+            #sidebar { position: fixed; height: 100vh; }
+            #sidebar.collapsed { width: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-layout">
+    <!-- BARRA LATERAL IZQUIERDA -->
+    <aside id="sidebar" class="hidden">
+        <div class="sidebar-header">
+            <a href="#" class="sidebar-brand">593 TucaminoalaU</a>
+            <!-- Botón de contraer seguro vía onclick nativo -->
+            <button class="btn-toggle-sidebar" id="btn-collapse-sidebar" title="Contraer menú" onclick="document.getElementById('sidebar').classList.add('collapsed'); document.getElementById('btn-expand-sidebar').classList.remove('hidden');"><i class="fas fa-chevron-left"></i></button>
+        </div>
+        
+        <div class="sidebar-nav">
+            <div class="nav-item active" id="nav-inicio" onclick="mostrarVista('view-inicio')">
+                <i class="fas fa-home"></i> Inicio
+            </div>
+            
+            <div style="padding: 15px 15px 10px 15px; font-size: 22px; font-weight: 900; color: #FFF; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px;">
+                Materias
+            </div>
+            
+            <div id="sidebar-dynamic-content"></div>
+        </div>
+    </aside>
+
+    <!-- PANEL DERECHO -->
+    <main id="main-content">
+        <header class="top-navbar hidden" id="top-navbar">
+            <div class="top-navbar-left">
+                <!-- Botón de expandir seguro vía onclick nativo -->
+                <button class="btn-toggle-sidebar hidden" id="btn-expand-sidebar" title="Expandir menú" onclick="document.getElementById('sidebar').classList.remove('collapsed'); document.getElementById('btn-expand-sidebar').classList.add('hidden');"><i class="fas fa-chevron-right"></i></button>
+                <div id="top-title">Inicio</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 13px; font-weight: 600;" id="user-display-name">593 TucaminoalaU</span>
+                <button id="btn-ir-admin" class="btn-danger hidden" style="padding: 6px 12px; font-size: 12px;"><i class="fas fa-cog"></i> Admin</button>
+                <button class="btn-outline btn-logout" style="padding: 6px 12px; font-size: 12px;"><i class="fas fa-sign-out-alt"></i> Salir</button>
+            </div>
+        </header>
+
+        <!-- 1. VISTA: LOGIN -->
+        <section id="view-login" class="content-container">
+            <div class="login-card">
+                <img src="imagenes/logo.png" alt="Logo" style="max-width: 150px; border-radius: 10px; margin-bottom: 15px;">
+                <h2 style="margin: 0 0 5px 0; color: var(--primary);">Aula virtual</h2>
+                <p style="color: var(--text-light); font-size: 14px; margin-bottom: 25px;">Inicio de Sesión</p>
+
+                <form id="form-login-email" onsubmit="return false;">
+                    <div class="input-group">
+                        <label>Correo Electrónico Autorizado</label>
+                        <input type="email" id="login-email" class="input-text" placeholder="estudiante@ejemplo.com" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="login-password" class="input-text" placeholder="••••••••" required>
+                    </div>
+                    <button id="btn-login-email" class="btn-primary" style="width: 100%; margin-top: 10px; justify-content: center; padding: 12px;">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </button>
+                </form>
+                <div style="margin: 20px 0; color: var(--text-light); font-size: 12px;">O TAMBIÉN</div>
+                <button id="btn-login-google" class="btn-outline" style="width: 100%; justify-content: center; padding: 10px;">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="18" height="18" alt="Google"> Continuar con Google
+                </button>
+                <p id="login-error" class="hidden" style="color: var(--danger); font-size: 13px; margin-top: 20px; font-weight: 600;"></p>
+            </div>
+        </section>
+
+        <!-- 2. VISTA: INICIO -->
+        <section id="view-inicio" class="content-container hidden">
+            <img src="imagenes/logo.png" alt="593 TucaminoalaU" style="max-width: 250px; border-radius: 12px; margin-bottom: 15px;">
+            <h1 class="titulo-animado">¡Bienvenido/a al Aula Virtual!</h1>
+            <p style="color: var(--text-light); font-size: 16px;">¡Prepara tu camino a la Universidad de forma interactiva!</p>
+            
+            <div class="video-wrapper">
+                <div class="video-box">
+                    <video controls preload="metadata">
+                        <source src="videos/introduccion.mp4" type="video/mp4">
+                        Tu navegador no soporta la reproducción de video HTML5.
+                    </video>
+                </div>
+            </div>
+
+            <div class="instruction-card">
+                <h3 style="margin-top: 0; color: var(--primary);"><i class="fas fa-info-circle" style="color: var(--primary-light);"></i> Instrucciones</h3>
+                <ol style="color: var(--text-dark); line-height: 1.8; padding-left: 20px;">
+                    <li>Explora las materias, módulos y temas en el menú lateral.</li>
+                    <li>Tu progreso se mide a lo largo de una divertida pista de carreras.</li>
+                    <li>Lee la síntesis, mira videos y rinde los simuladores para estar listo para la evaluación final.</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- 3. VISTA: MÓDULO (PISTA DE CARRERAS) -->
+        <section id="view-modulo" class="content-container hidden">
+            <h2 id="modulo-titulo" style="font-size: 28px; color: var(--color-modulo); margin-top: 0;"></h2>
+            <p style="color: var(--text-light);">Avanza por la autopista completando los temas hasta llegar a la meta.</p>
+
+            <div id="modulo-temas-container"></div>
+
+            <div class="progress-legend" style="margin-top: 30px; margin-bottom: 0;">
+                <div class="legend-item"><span class="dot dot-green"></span> Completado</div>
+                <div class="legend-item"><span class="dot dot-yellow"></span> En Progreso (Tu ubicación actual)</div>
+                <div class="legend-item"><span class="dot dot-red"></span> No Completado</div>
+            </div>
+        </section>
+
+        <!-- 4. VISTA: DETALLE DEL TEMA -->
+        <section id="view-tema" class="content-container hidden">
+            <!-- BOTÓN VOLVER A MÓDULOS -->
+            <button class="btn-outline" id="btn-volver-modulo" style="margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Volver a módulos</button>
+            
+            <!-- TÍTULO DEL TEMA -->
+            <h2 style="font-size: 28px; color: var(--color-tema); margin-top: 0; text-align: left;">Tema: <span id="tema-titulo"></span></h2>
+            
+            <!-- SUBTÍTULO CENTRADO -->
+            <h3 style="text-align: center; color: var(--primary); font-size: 22px; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 10px;">Recursos de aprendizaje</h3>
+
+            <!-- NUEVO: BOTONES HORIZONTALES PARA LOS ACORDEONES -->
+            <div class="accordion-row">
+                <button class="accordion-header" onclick="toggleAccordion('acc-textos', this)">
+                    <span>1. Textos y Resumen</span> <i class="fas fa-chevron-down" style="margin-left: 8px;"></i>
+                </button>
+                <button class="accordion-header" onclick="toggleAccordion('acc-videos', this)">
+                    <span>2. Videos Explicativos</span> <i class="fas fa-chevron-down" style="margin-left: 8px;"></i>
+                </button>
+                <button class="accordion-header" onclick="toggleAccordion('acc-imagenes', this)">
+                    <span>3. Imágenes y Gráficos</span> <i class="fas fa-chevron-down" style="margin-left: 8px;"></i>
+                </button>
+                <button class="accordion-header" onclick="toggleAccordion('acc-evaluacion', this)">
+                    <span>4. Evaluación (Simulador)</span> <i class="fas fa-chevron-down" style="margin-left: 8px;"></i>
+                </button>
+            </div>
+
+            <!-- ACORDEÓN: CONTENIDO TEXTOS -->
+            <div id="acc-textos" class="accordion-content">
+                <div class="instruction-card" style="margin-top: 0; border: none; box-shadow: none; padding: 0;">
+                    <h4 style="margin-top: 0; color: var(--primary-light); font-size: 18px;">Resumen y Síntesis</h4>
+                    <div id="tema-resumen" style="line-height: 1.7; font-size: 15px; background: #F8FAFC; padding: 20px; border-radius: 8px;"></div>
+                    <button id="btn-descargar-pdf" class="btn-primary" style="margin-top: 20px;"><i class="fas fa-file-pdf"></i> Descargar PDF</button>
+                </div>
+                
+                <div class="instruction-card" style="border: none; box-shadow: none; padding: 20px 0 0 0;">
+                    <h4 style="margin-top: 0; color: var(--success); font-size: 18px;">Lecturas Sugeridas</h4>
+                    <div id="tema-lecturas-list" class="flex-horizontal"></div>
+                </div>
+            </div>
+
+            <!-- ACORDEÓN: CONTENIDO VIDEOS -->
+            <div id="acc-videos" class="accordion-content">
+                <div class="instruction-card" style="margin-top: 0; border: none; box-shadow: none; padding: 0;">
+                    <div id="tema-videos-list" class="flex-horizontal"></div>
+                    
+                    <!-- SECCIÓN LABORATORIO -->
+                    <div id="seccion-laboratorio" class="hidden" style="margin-top: 35px; border-top: 2px solid var(--border); padding-top: 25px; text-align: center;">
+                        <h4 style="color: var(--primary); font-size: 20px; margin-top: 0; margin-bottom: 15px;">Laboratorio Práctico</h4>
+                        <div id="contenedor-video-laboratorio" style="display: flex; justify-content: center; width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACORDEÓN: CONTENIDO IMÁGENES -->
+            <div id="acc-imagenes" class="accordion-content">
+                <div class="instruction-card" style="margin-top: 0; border: none; box-shadow: none; padding: 0;">
+                    <div id="tema-imagenes-list" class="flex-horizontal" style="justify-content: center;"></div>
+                </div>
+            </div>
+
+            <!-- ACORDEÓN: CONTENIDO EVALUACIÓN -->
+            <div id="acc-evaluacion" class="accordion-content">
+                <div class="instruction-card" style="margin-top: 0; background: #EFF6FF; border-color: #BFDBFE;">
+                    <h3 style="margin-top: 0; color: #1E3A8A;">Simulador del Tema</h3>
+                    <button id="btn-generar-simulador" class="btn-primary" style="background: var(--primary-light); padding: 12px 25px; font-size: 15px;"><i class="fas fa-play"></i> Iniciar Evaluación</button>
+                    <div id="simulador-status" style="margin-top: 15px; font-weight: 600; font-size: 16px;"></div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div id="lista-simuladores-guardados" style="display: grid; gap:10px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. VISTA: SIMULADOR -->
+        <section id="view-quiz" class="content-container hidden">
+            <div class="instruction-card" style="text-align: center; margin-bottom: 25px;">
+                <h2 style="margin: 0; color: var(--color-tema);" id="quiz-titulo">Evaluación</h2>
+                <p style="color: var(--text-light);" id="quiz-subtitulo"></p>
+            </div>
+            <div id="quiz-preguntas-container"></div>
+            <button id="btn-enviar-quiz" class="btn-success" style="width: 100%; padding: 15px; font-size: 16px; justify-content: center; margin-top: 20px;">
+                <i class="fas fa-check-circle"></i> Calificar Examen
+            </button>
+            <div id="quiz-resultado" class="instruction-card hidden" style="text-align: center; margin-top: 20px; border-color: var(--success);"></div>
+            <button id="btn-volver-tema-desde-quiz" class="btn-outline hidden" style="width: 100%; margin-top: 15px; justify-content: center;">Volver al Tema</button>
+        </section>
+
+        <!-- 6. VISTA: ADMINISTRACIÓN -->
+        <section id="view-admin" class="content-container hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: var(--primary);"><i class="fas fa-shield-alt" style="color: var(--danger);"></i> Control Total del Aula</h2>
+                <button class="btn-outline" onclick="mostrarVista('view-inicio')"><i class="fas fa-eye"></i> Vista Alumno</button>
+            </div>
+
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchAdminTab('materias')">1. Materias</button>
+                <button class="tab-btn" onclick="switchAdminTab('modulos')">2. Módulos</button>
+                <button class="tab-btn" onclick="switchAdminTab('temas')">3. Temas</button>
+                <button class="tab-btn" onclick="switchAdminTab('alumnos')">Alumnos Permitidos</button>
+            </div>
+
+            <!-- Tab: Materias -->
+            <div id="admin-tab-materias" class="tab-content">
+                <div class="instruction-card" style="margin-top: 0;">
+                    <h3>Crear Materia</h3>
+                    <div class="input-group">
+                        <label>Nombre de la Materia</label>
+                        <input type="text" id="admin-nueva-materia" class="input-text" placeholder="Ej: Química, Física...">
+                    </div>
+                    <div class="input-group">
+                        <label>Orden (Número para ordenar)</label>
+                        <input type="number" id="admin-nueva-materia-orden" class="input-text" placeholder="Ej: 1, 2, 3..." value="0">
+                    </div>
+                    <button id="btn-crear-materia" class="btn-success"><i class="fas fa-plus"></i> Guardar Materia</button>
+                </div>
+                <div class="instruction-card">
+                    <h3>Materias Existentes</h3>
+                    <div id="admin-lista-materias">Cargando...</div>
+                </div>
+            </div>
+
+            <!-- Tab: Módulos -->
+            <div id="admin-tab-modulos" class="tab-content hidden">
+                <div class="instruction-card" style="margin-top: 0;">
+                    <h3>Crear Módulo</h3>
+                    <div class="input-group">
+                        <label>Selecciona la Materia</label>
+                        <select id="admin-select-materia-modulo" class="input-text"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>Nombre del Módulo</label>
+                        <input type="text" id="admin-nuevo-modulo" class="input-text" placeholder="Ej: Módulo 1: Termodinámica">
+                    </div>
+                    <div class="input-group">
+                        <label>URL Evaluación Final (Opcional - Archivo HTML)</label>
+                        <input type="text" id="admin-nuevo-modulo-eval" class="input-text" placeholder="Ej: examen_fisica.html">
+                    </div>
+                    <button id="btn-crear-modulo" class="btn-success"><i class="fas fa-plus"></i> Guardar Módulo</button>
+                </div>
+                <div class="instruction-card">
+                    <h3>Módulos Existentes</h3>
+                    <div id="admin-lista-modulos">Cargando...</div>
+                </div>
+            </div>
+
+            <!-- Tab: Temas -->
+            <div id="admin-tab-temas" class="tab-content hidden">
+                <div class="instruction-card" style="margin-top: 0;">
+                    <h3>Crear Nuevo Tema (Contenido Manual)</h3>
+                    <div class="input-group">
+                        <label>1. Materia</label>
+                        <select id="admin-tema-materia" class="input-text"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>2. Módulo</label>
+                        <select id="admin-tema-modulo" class="input-text">
+                            <option value="">Selecciona primero una materia</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Título del Tema</label>
+                        <input type="text" id="admin-tema-titulo" class="input-text" placeholder="Ej: Leyes de Newton">
+                    </div>
+                    <div class="input-group">
+                        <label>Resumen y Síntesis (Texto para la clase)</label>
+                        <textarea id="admin-tema-resumen" rows="6" placeholder="Escribe aquí el resumen teórico..."></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Lecturas Recomendadas (Un enlace por línea: Título http...)</label>
+                        <textarea id="admin-tema-lecturas" rows="2" placeholder="Documento extra https://..."></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Videos Recomendados (Un enlace de YouTube por línea)</label>
+                        <textarea id="admin-tema-videos" rows="2" placeholder="https://youtube.com/watch?v=..."></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Video de Laboratorio (URL - Solo aparecerá en la materia Química)</label>
+                        <input type="text" id="admin-tema-laboratorio" class="input-text" placeholder="https://youtube.com/watch?v=...">
+                    </div>
+                    <div class="input-group">
+                        <label>Imágenes (Un nombre de archivo por línea con su extensión)</label>
+                        <textarea id="admin-tema-imagenes" rows="2" placeholder="ejemplo1.jpg&#10;grafico2.png"></textarea>
+                    </div>
+                    <button id="btn-admin-guardar-tema" class="btn-success" style="width: 100%; justify-content: center; padding: 12px;">
+                        <i class="fas fa-save"></i> Guardar Tema
+                    </button>
+                    <div id="admin-status" style="margin-top: 10px; font-weight: 600; text-align: center;"></div>
+                </div>
+                <div class="instruction-card">
+                    <h3>Temas Publicados</h3>
+                    <div id="admin-lista-temas">Cargando...</div>
+                </div>
+            </div>
+
+            <!-- Tab: Alumnos -->
+            <div id="admin-tab-alumnos" class="tab-content hidden">
+                <div class="instruction-card" style="margin-top: 0;">
+                    <h3>Añadir Correo Autorizado</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <input type="email" id="admin-nuevo-alumno-email" class="input-text" placeholder="estudiante@gmail.com">
+                        <button id="btn-admin-agregar-alumno" class="btn-success">Autorizar</button>
+                    </div>
+                    <h4>Alumnos Autorizados</h4>
+                    <div id="admin-lista-alumnos">Cargando...</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
