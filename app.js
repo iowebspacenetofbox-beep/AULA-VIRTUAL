@@ -63,30 +63,37 @@ window.toggleTreeNode = function(id) {
     if(el) el.classList.toggle('open');
 }
 
-window.toggleAccordion = function(id, btnElement) {
-    const el = document.getElementById(id);
-    const icon = btnElement.querySelector('i');
+// FUNCIONES NUEVAS PARA EL MENÚ DE RECURSOS
+window.mostrarRecurso = function(id, nombreRecurso) {
+    // 1. Ocultamos el menú principal de recursos
+    document.getElementById('menu-recursos').classList.add('hidden');
+    // 2. Nos aseguramos de ocultar cualquier contenido que pudiera estar abierto
+    document.querySelectorAll('.recurso-content').forEach(el => el.classList.add('hidden'));
     
-    // Verificar si el actual ya estaba abierto antes de cerrar los demás
-    const isOpen = (el.style.display === "block");
+    // 3. Mostramos solo el contenido que el usuario seleccionó (nueva indexación visual)
+    document.getElementById(id).classList.remove('hidden');
     
-    // 1. Cerrar todos los acordeones primero
-    document.querySelectorAll('.accordion-content').forEach(content => {
-        content.style.display = "none";
-    });
+    // 4. Cambiamos los botones de navegación
+    document.getElementById('btn-volver-modulo').classList.add('hidden');
+    document.getElementById('btn-volver-recursos').classList.remove('hidden');
     
-    // 2. Resetear todos los iconos
-    document.querySelectorAll('.accordion-row .accordion-header i').forEach(icn => {
-        icn.classList.remove('fa-chevron-up');
-        icn.classList.add('fa-chevron-down');
-    });
+    // 5. Actualizamos el subtítulo de la vista
+    document.getElementById('subtitulo-recursos').textContent = nombreRecurso;
+}
 
-    // 3. Si no estaba abierto, abrir el que recibió el clic
-    if (!isOpen) {
-        el.style.display = "block";
-        icon.classList.remove('fa-chevron-down');
-        icon.classList.add('fa-chevron-up');
-    }
+window.volverRecursos = function() {
+    // 1. Volvemos a mostrar el menú de botones grandes
+    document.getElementById('menu-recursos').classList.remove('hidden');
+    
+    // 2. Ocultamos los recursos individuales
+    document.querySelectorAll('.recurso-content').forEach(el => el.classList.add('hidden'));
+    
+    // 3. Restauramos la navegación original del tema
+    document.getElementById('btn-volver-recursos').classList.add('hidden');
+    document.getElementById('btn-volver-modulo').classList.remove('hidden');
+    
+    // 4. Restauramos el subtítulo
+    document.getElementById('subtitulo-recursos').textContent = "Recursos de aprendizaje";
 }
 
 window.switchAdminTab = function(tabName) {
@@ -501,20 +508,9 @@ window.abrirTema = async function(temaId, matId, matNombre, modNombre) {
             await setDoc(progRef, { status: 'yellow', last_accessed: new Date().toISOString() }, { merge: true });
         }
 
-        // 1. Cerrar todos los acordeones por defecto
-        document.querySelectorAll('.accordion-content').forEach(el => el.style.display = "none");
-        document.querySelectorAll('.accordion-header i').forEach(icon => {
-            icon.classList.remove('fa-chevron-up');
-            icon.classList.add('fa-chevron-down');
-        });
-
-        // 2. ABRIR EL PRIMER ACORDEÓN POR DEFECTO PARA QUE EL CONTENIDO SEA VISIBLE
-        const accTextos = document.getElementById('acc-textos');
-        if (accTextos) accTextos.style.display = 'block';
-        const iconTextos = document.querySelector('button[onclick*="acc-textos"] i');
-        if(iconTextos) {
-            iconTextos.classList.remove('fa-chevron-down');
-            iconTextos.classList.add('fa-chevron-up');
+        // 1. Mostrar siempre el menú principal de recursos por defecto al abrir un tema
+        if(typeof window.volverRecursos === 'function') {
+            window.volverRecursos();
         }
 
         // Textos: Resumen Manual 
