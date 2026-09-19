@@ -6,9 +6,19 @@
     <title>593 TucaminoalaU - Aula Virtual</title>
     <!-- Marked.js para formatear Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- MathJax para renderizar fórmulas matemáticas y químicas -->
+    
+    <!-- Configuración e importación de MathJax para LaTeX -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['$$', '$$'], ['\\[', '\\]']]
+        }
+      };
+    </script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
     <!-- FontAwesome para Iconos -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- html2pdf para descargar resúmenes en PDF -->
@@ -195,7 +205,7 @@
         .enlace-lectura { display: inline-block; background: var(--primary); color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
         .enlace-lectura:hover { background: var(--primary-light); transform: translateY(-2px); }
 
-        /* ESTILOS PARA RECURSOS (NUEVO MENÚ DE BOTONES) */
+        /* ESTILOS PARA RECURSOS (MENÚ DE BOTONES) */
         .btn-recurso {
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
             color: white;
@@ -230,6 +240,26 @@
             margin-bottom: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
+
+        /* ESTILOS PARA MODALES SUPERPUESTOS */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: white; padding: 30px; border-radius: 16px; max-width: 600px; width: 90%;
+            position: relative; box-shadow: 0 15px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto;
+        }
+        .modal-close {
+            position: absolute; top: 15px; right: 15px; background: var(--danger); color: white;
+            border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: bold;
+            transition: background 0.2s;
+        }
+        .modal-close:hover { background: #991B1B; }
+        .modal-content-img img { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
 
         @media (max-width: 768px) {
             #sidebar { position: fixed; height: 100vh; }
@@ -346,7 +376,7 @@
 
         <!-- 4. VISTA: DETALLE DEL TEMA -->
         <section id="view-tema" class="content-container hidden">
-            <!-- BOTONES SUPERIORES (Se ocultan o muestran según la vista de recurso) -->
+            <!-- BOTONES SUPERIORES -->
             <button class="btn-outline" id="btn-volver-modulo" style="margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Volver a módulos</button>
             <button class="btn-outline hidden" id="btn-volver-recursos" onclick="volverRecursos()" style="margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Volver al Tema</button>
             
@@ -356,7 +386,7 @@
             <!-- SUBTÍTULO DINÁMICO -->
             <h3 id="subtitulo-recursos" style="text-align: center; color: var(--primary); font-size: 22px; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 10px;">Recursos de aprendizaje</h3>
 
-            <!-- NUEVO: MENÚ HORIZONTAL DE RECURSOS -->
+            <!-- MENÚ HORIZONTAL DE RECURSOS -->
             <div id="menu-recursos" class="flex-horizontal" style="justify-content: center; gap: 20px;">
                 <button class="btn-recurso" onclick="mostrarRecurso('acc-textos', 'Textos y Resumen')">
                     <i class="fas fa-book-open"></i> <span>1. Textos y Resumen</span>
@@ -406,12 +436,14 @@
                 </div>
             </div>
 
-            <!-- CONTENIDO: EVALUACIÓN -->
+            <!-- CONTENIDO: EVALUACIÓN (MODIFICADO PARA ENLACE EXTERNO) -->
             <div id="acc-evaluacion" class="recurso-content hidden">
                 <div class="instruction-card" style="margin-top: 0; background: #EFF6FF; border-color: #BFDBFE;">
                     <h3 style="margin-top: 0; color: #1E3A8A;">Simulador del Tema</h3>
-                    <button id="btn-generar-simulador" class="btn-primary" style="background: var(--primary-light); padding: 12px 25px; font-size: 15px;"><i class="fas fa-play"></i> Iniciar Evaluación</button>
-                    <div id="simulador-status" style="margin-top: 15px; font-weight: 600; font-size: 16px;"></div>
+                    <p style="color: var(--text-dark); margin-bottom: 15px;">Haz clic en el botón para dirigirte a la plataforma de evaluación de este tema.</p>
+                    <button id="btn-generar-simulador" class="btn-primary" style="background: var(--primary-light); padding: 12px 25px; font-size: 15px;">
+                        <i class="fas fa-play"></i> Ir a los Simuladores
+                    </button>
                 </div>
                 <div style="margin-top: 20px;">
                     <div id="lista-simuladores-guardados" style="display: grid; gap:10px;"></div>
@@ -419,7 +451,7 @@
             </div>
         </section>
 
-        <!-- 5. VISTA: SIMULADOR -->
+        <!-- 5. VISTA: SIMULADOR (Mantenida por compatibilidad si guardaste anteriores) -->
         <section id="view-quiz" class="content-container hidden">
             <div class="instruction-card" style="text-align: center; margin-bottom: 25px;">
                 <h2 style="margin: 0; color: var(--color-tema);" id="quiz-titulo">Evaluación</h2>
@@ -510,8 +542,16 @@
                         <input type="text" id="admin-tema-titulo" class="input-text" placeholder="Ej: Leyes de Newton">
                     </div>
                     <div class="input-group">
-                        <label>Resumen y Síntesis (Texto para la clase)</label>
-                        <textarea id="admin-tema-resumen" rows="6" placeholder="Escribe aquí el resumen teórico..."></textarea>
+                        <label style="color:var(--primary-light);">
+                            Resumen y Síntesis 
+                            <small style="font-weight: normal; color:var(--text-light); display:block; margin-top:4px;">
+                            (Soporta negritas con <b>**texto**</b>, LaTeX con <b>$$ H_2O $$</b>.<br> 
+                            Centrar: <code>&lt;div style="text-align:center"&gt;Texto&lt;/div&gt;</code>.<br>
+                            Imágenes Modal: <code>&lt;a href="#" onclick="mostrarModalImagen('foto.jpg')"&gt;Ver foto&lt;/a&gt;</code>.<br>
+                            Conceptos Modal: <code>&lt;a href="#" onclick='mostrarModalConcepto("Concepto con $$H_2O$$")'&gt;Clic Aquí&lt;/a&gt;</code>.)
+                            </small>
+                        </label>
+                        <textarea id="admin-tema-resumen" rows="8" placeholder="Escribe aquí tu contenido enriquecido..."></textarea>
                     </div>
                     <div class="input-group">
                         <label>Lecturas Recomendadas (Un enlace por línea: Título http...)</label>
@@ -555,6 +595,14 @@
         </section>
 
     </main>
+</div>
+
+<!-- CONTENEDOR DEL MODAL SUPERPUESTO (GLOBAL) -->
+<div id="custom-modal" class="modal-overlay">
+    <div class="modal-box">
+        <button class="modal-close" onclick="cerrarModal()"><i class="fas fa-times"></i></button>
+        <div id="modal-body" style="margin-top: 10px;"></div>
+    </div>
 </div>
 
 <script type="module" src="./app.js"></script>
