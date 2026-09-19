@@ -63,36 +63,21 @@ window.toggleTreeNode = function(id) {
     if(el) el.classList.toggle('open');
 }
 
-// FUNCIONES NUEVAS PARA EL MENÚ DE RECURSOS
+// FUNCIONES PARA EL MENÚ DE RECURSOS
 window.mostrarRecurso = function(id, nombreRecurso) {
-    // 1. Ocultamos el menú principal de recursos
     document.getElementById('menu-recursos').classList.add('hidden');
-    // 2. Nos aseguramos de ocultar cualquier contenido que pudiera estar abierto
     document.querySelectorAll('.recurso-content').forEach(el => el.classList.add('hidden'));
-    
-    // 3. Mostramos solo el contenido que el usuario seleccionó (nueva indexación visual)
     document.getElementById(id).classList.remove('hidden');
-    
-    // 4. Cambiamos los botones de navegación
     document.getElementById('btn-volver-modulo').classList.add('hidden');
     document.getElementById('btn-volver-recursos').classList.remove('hidden');
-    
-    // 5. Actualizamos el subtítulo de la vista
     document.getElementById('subtitulo-recursos').textContent = nombreRecurso;
 }
 
 window.volverRecursos = function() {
-    // 1. Volvemos a mostrar el menú de botones grandes
     document.getElementById('menu-recursos').classList.remove('hidden');
-    
-    // 2. Ocultamos los recursos individuales
     document.querySelectorAll('.recurso-content').forEach(el => el.classList.add('hidden'));
-    
-    // 3. Restauramos la navegación original del tema
     document.getElementById('btn-volver-recursos').classList.add('hidden');
     document.getElementById('btn-volver-modulo').classList.remove('hidden');
-    
-    // 4. Restauramos el subtítulo
     document.getElementById('subtitulo-recursos').textContent = "Recursos de aprendizaje";
 }
 
@@ -107,6 +92,31 @@ window.switchAdminTab = function(tabName) {
     if(tabName === 'temas') btns[2].classList.add('active');
     if(tabName === 'alumnos') btns[3].classList.add('active');
 }
+
+// ==========================================
+// FUNCIONES PARA MODALES (IMÁGENES Y CONCEPTOS)
+// ==========================================
+window.mostrarModalImagen = function(nombreImagen) {
+    const body = document.getElementById('modal-body');
+    body.innerHTML = `<div class="modal-content-img" style="text-align:center;"><img src="imagenes/${nombreImagen}" alt="Imagen Ampliada"></div>`;
+    document.getElementById('custom-modal').classList.add('active');
+};
+
+window.mostrarModalConcepto = function(texto) {
+    const body = document.getElementById('modal-body');
+    body.innerHTML = `<div style="font-size: 16px; line-height: 1.7; color: var(--text-dark); padding: 10px;">${texto}</div>`;
+    document.getElementById('custom-modal').classList.add('active');
+    
+    // Renderizamos las fórmulas en el modal en caso de que el concepto las tenga
+    if(window.MathJax) {
+        MathJax.typesetPromise([body]);
+    }
+};
+
+window.cerrarModal = function() {
+    document.getElementById('custom-modal').classList.remove('active');
+    document.getElementById('modal-body').innerHTML = "";
+};
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -268,48 +278,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // SIMULADOR IA & EVALUACIÓN
+    // SIMULADOR: REDIRECCIÓN AL ARCHIVO EXTERNO
     // ==========================================
-    document.getElementById('btn-generar-simulador')?.addEventListener('click', async () => {
-        const status = document.getElementById('simulador-status');
-        const hoy = new Date().toISOString().split('T')[0];
-        const limiteRef = doc(db, "usuarios", usuarioActual.uid, "limites", `${hoy}_${temaActualInfo.id}`);
-        const limiteSnap = await getDoc(limiteRef);
-        let generadosHoy = limiteSnap.exists() ? limiteSnap.data().cantidad : 0;
-
-        if (generadosHoy >= 5) {
-            status.style.color = "var(--danger)";
-            status.textContent = "❌ Límite diario de 5 evaluaciones alcanzado."; return;
-        }
-
-        status.style.color = "var(--primary-light)";
-        status.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Cargando...";
-
-        try {
-            const promptText = `Actúa como creador de exámenes de admisión. Materia: ${materiaSeleccionada.nombre}. Tema: "${temaActualInfo.titulo}". Genera un cuestionario de 5 preguntas de opción múltiple. Devuelve EXCLUSIVAMENTE JSON sin markdown: { "preguntas": [ { "enunciado": "...", "opciones": ["A) op1", "B) op2", "C) op3", "D) op4"], "respuesta_correcta": 0, "explicacion": "..." } ] }`;
-
-            const response = await fetch('/.netlify/functions/gemini', {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: promptText, modelo: "gemini-3.1-flash-lite" }) 
-            });
-            const data = await response.json();
-            
-            if(!data.candidates || data.candidates.length === 0) throw new Error("Error en la conexión con el evaluador.");
-            
-            const textoIA = data.candidates[0].content.parts[0].text;
-            const simuladorJSON = JSON.parse(textoIA.replace(/```json/g, '').replace(/```/g, '').trim());
-
-            await addDoc(collection(db, "usuarios", usuarioActual.uid, "simuladores_guardados"), {
-                tema_id: temaActualInfo.id, tema_titulo: temaActualInfo.titulo,
-                preguntas: simuladorJSON.preguntas, fecha_creacion: new Date().toISOString()
-            });
-
-            await setDoc(limiteRef, { cantidad: generadosHoy + 1 });
-            status.style.color = "var(--success)";
-            status.textContent = "✅ Evaluación lista.";
-            cargarSimuladoresGuardados();
-        } catch(e) {
-            status.style.color = "var(--danger)"; status.textContent = "❌ Error al cargar: " + e.message;
+    document.getElementById('btn-generar-simulador')?.addEventListener('click', () => {
+        if(temaActualInfo && materiaSeleccionada) {
+            // Se abre simuladores.html en una nueva pestaña enviando los parámetros necesarios
+            const url = `simuladores.html?temaId=${temaActualInfo.id}&materiaId=${materiaSeleccionada.id}`;
+            window.open(url, '_blank');
+        } else {
+            alert("Error: Por favor seleccione un tema válido primero.");
         }
     });
 
@@ -411,7 +388,6 @@ async function cargarEstructuraGlobal() {
             const idArbolMod = `tree-mod-${mod.id}`;
             const evalArchivo = mod.archivo_evaluacion || "";
             
-            // Protección contra comillas dobles o simples en los nombres
             const safeMatNombre = (mat.nombre || "").replace(/'/g, "\\'");
             const safeModNombre = (mod.nombre || "").replace(/'/g, "\\'");
 
@@ -508,23 +484,26 @@ window.abrirTema = async function(temaId, matId, matNombre, modNombre) {
             await setDoc(progRef, { status: 'yellow', last_accessed: new Date().toISOString() }, { merge: true });
         }
 
-        // 1. Mostrar siempre el menú principal de recursos por defecto al abrir un tema
         if(typeof window.volverRecursos === 'function') {
             window.volverRecursos();
         }
 
-        // Textos: Resumen Manual 
+        // Textos: Resumen Manual (CON PROCESAMIENTO DE LATEX ASEGURADO)
         const resBox = document.getElementById('tema-resumen');
-        if (resBox) resBox.innerHTML = typeof marked !== 'undefined' ? marked.parse(data.resumen_teorico || "") : data.resumen_teorico;
+        if (resBox) {
+            resBox.innerHTML = typeof marked !== 'undefined' ? marked.parse(data.resumen_teorico || "") : data.resumen_teorico;
+            // Indicamos a MathJax que procese las fórmulas matemáticas recién renderizadas
+            if(window.MathJax) {
+                MathJax.typesetPromise([resBox]).catch((err) => console.log('Error renderizando LaTeX:', err));
+            }
+        }
 
-        // Textos: Lecturas Horizontales (CON PROTECCIÓN DE ARRAY)
         const lecList = document.getElementById('tema-lecturas-list');
         if (lecList) {
             lecList.innerHTML = (Array.isArray(data.lecturas_recomendadas) && data.lecturas_recomendadas.length) ? 
                 data.lecturas_recomendadas.map((l, idx) => `<a href="${l.url}" target="_blank" class="enlace-lectura">Lectura ${idx + 1}: ${l.titulo}</a>`).join('') : "<p style='color:var(--text-light)'>No hay lecturas asignadas.</p>";
         }
 
-        // Videos Incrustados Horizontales (CON PROTECCIÓN DE ARRAY)
         const vidList = document.getElementById('tema-videos-list');
         if (vidList) {
             if (Array.isArray(data.videos_recomendados) && data.videos_recomendados.length) {
@@ -540,7 +519,6 @@ window.abrirTema = async function(temaId, matId, matNombre, modNombre) {
             }
         }
 
-        // Lógica para Química -> Laboratorio incrustado
         const secLab = document.getElementById('seccion-laboratorio');
         if (secLab) {
             const matNormalizada = (matNombre || "").trim().toUpperCase();
@@ -557,7 +535,6 @@ window.abrirTema = async function(temaId, matId, matNombre, modNombre) {
             }
         }
 
-        // Imágenes Horizontales (CON PROTECCIÓN DE ARRAY)
         const imgList = document.getElementById('tema-imagenes-list');
         if (imgList) {
             if (Array.isArray(data.imagenes) && data.imagenes.length) {
@@ -576,17 +553,18 @@ window.abrirTema = async function(temaId, matId, matNombre, modNombre) {
     }
 }
 
+// Seguimos guardando esto en caso de que simuladores.html guarde los resultados en Firebase como lo hacía antes.
 async function cargarSimuladoresGuardados() {
     const cont = document.getElementById('lista-simuladores-guardados');
-    cont.innerHTML = "<p>Cargando evaluaciones...</p>";
+    cont.innerHTML = "<p>Cargando historial...</p>";
     const snap = await getDocs(query(collection(db, "usuarios", usuarioActual.uid, "simuladores_guardados"), where("tema_id", "==", temaActualInfo.id)));
     
-    if(snap.empty) { cont.innerHTML = "<p style='font-size:13px; color:var(--text-light);'>No has realizado ninguna evaluación.</p>"; return; }
+    if(snap.empty) { cont.innerHTML = "<p style='font-size:13px; color:var(--text-light);'>No has realizado ninguna evaluación previa guardada.</p>"; return; }
 
     let html = ""; let i = 1;
     snap.forEach(d => {
         const p = JSON.stringify(d.data().preguntas).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-        html += `<button class="btn-outline" style="justify-content: flex-start; text-align: left; padding: 12px;" onclick="iniciarQuiz(${p})"><i class="fas fa-file-signature"></i> Evaluación #${i++}</button>`;
+        html += `<button class="btn-outline" style="justify-content: flex-start; text-align: left; padding: 12px;" onclick="iniciarQuiz(${p})"><i class="fas fa-file-signature"></i> Evaluación Pasada #${i++}</button>`;
     });
     cont.innerHTML = html;
 }
@@ -594,7 +572,7 @@ async function cargarSimuladoresGuardados() {
 window.iniciarQuiz = function(preguntas) {
     quizActivo = preguntas;
     document.getElementById('quiz-titulo').textContent = temaActualInfo.titulo;
-    document.getElementById('quiz-subtitulo').textContent = "Responde las siguientes preguntas:";
+    document.getElementById('quiz-subtitulo').textContent = "Revisión de respuestas guardadas:";
     document.getElementById('btn-enviar-quiz').classList.remove('hidden');
     document.getElementById('btn-volver-tema-desde-quiz').classList.add('hidden');
     document.getElementById('quiz-resultado').classList.add('hidden');
