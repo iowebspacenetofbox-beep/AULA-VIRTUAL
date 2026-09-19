@@ -195,58 +195,46 @@
         .enlace-lectura { display: inline-block; background: var(--primary); color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
         .enlace-lectura:hover { background: var(--primary-light); transform: translateY(-2px); }
 
-        /* ESTILOS PARA ACORDEÓN */
-        .accordion-header {
+        /* ESTILOS PARA RECURSOS (NUEVO MENÚ DE BOTONES) */
+        .btn-recurso {
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
             color: white;
-            cursor: pointer;
-            padding: 16px 20px;
-            width: 100%;
-            text-align: left;
-            border: none;
-            outline: none;
-            transition: 0.3s;
-            font-size: 18px;
+            padding: 25px 20px;
+            font-size: 16px;
             font-weight: 700;
-            border-radius: 10px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            width: calc(50% - 15px);
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
-        .accordion-header:hover {
+        .btn-recurso:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
             filter: brightness(1.1);
         }
-        .accordion-content {
-            padding: 20px;
+        .btn-recurso i {
+            font-size: 32px;
+        }
+        .recurso-content {
+            padding: 25px;
             background-color: white;
-            display: none;
-            overflow: hidden;
             border: 1px solid var(--border);
-            border-radius: 10px;
-            margin-bottom: 10px;
+            border-radius: 12px;
+            margin-bottom: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-        
-        /* NUEVO: Contenedor para botones horizontales */
-        .accordion-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .accordion-row .accordion-header {
-            margin-top: 0;
-            flex: 1;
-            justify-content: center;
-            text-align: center;
-            font-size: 14px;
-            padding: 12px 10px;
         }
 
         @media (max-width: 768px) {
             #sidebar { position: fixed; height: 100vh; }
             #sidebar.collapsed { width: 0; }
+            .btn-recurso { width: 100%; }
         }
     </style>
 </head>
@@ -358,33 +346,34 @@
 
         <!-- 4. VISTA: DETALLE DEL TEMA -->
         <section id="view-tema" class="content-container hidden">
-            <!-- BOTÓN VOLVER A MÓDULOS -->
+            <!-- BOTONES SUPERIORES (Se ocultan o muestran según la vista de recurso) -->
             <button class="btn-outline" id="btn-volver-modulo" style="margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Volver a módulos</button>
+            <button class="btn-outline hidden" id="btn-volver-recursos" onclick="volverRecursos()" style="margin-bottom: 20px;"><i class="fas fa-arrow-left"></i> Volver a Opciones</button>
             
             <!-- TÍTULO DEL TEMA -->
             <h2 style="font-size: 28px; color: var(--color-tema); margin-top: 0; text-align: left;">Tema: <span id="tema-titulo"></span></h2>
             
-            <!-- SUBTÍTULO CENTRADO -->
-            <h3 style="text-align: center; color: var(--primary); font-size: 22px; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 10px;">Recursos de aprendizaje</h3>
+            <!-- SUBTÍTULO DINÁMICO -->
+            <h3 id="subtitulo-recursos" style="text-align: center; color: var(--primary); font-size: 22px; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 10px;">Recursos de aprendizaje</h3>
 
-            <!-- NUEVO: BOTONES HORIZONTALES PARA LOS ACORDEONES -->
-            <div class="accordion-row">
-                <button class="accordion-header" onclick="toggleAccordion('acc-textos', this)">
-                    <span>1. Textos y Resumen</span> <i class="fas fa-chevron-down" style="margin-left: 8px;"></i>
+            <!-- NUEVO: MENÚ HORIZONTAL DE RECURSOS -->
+            <div id="menu-recursos" class="flex-horizontal" style="justify-content: center; gap: 20px;">
+                <button class="btn-recurso" onclick="mostrarRecurso('acc-textos', 'Textos y Resumen')">
+                    <i class="fas fa-book-open"></i> <span>1. Textos y Resumen</span>
                 </button>
-                <button class="accordion-header" onclick="toggleAccordion('acc-videos', this)">
-                    <span>2. Videos Explicativos</span> <i class="fas fa-chevron-down" style="margin-left: 8px;"></i>
+                <button class="btn-recurso" onclick="mostrarRecurso('acc-videos', 'Videos Explicativos')">
+                    <i class="fas fa-video"></i> <span>2. Videos Explicativos</span>
                 </button>
-                <button class="accordion-header" onclick="toggleAccordion('acc-imagenes', this)">
-                    <span>3. Imágenes y Gráficos</span> <i class="fas fa-chevron-down" style="margin-left: 8px;"></i>
+                <button class="btn-recurso" onclick="mostrarRecurso('acc-imagenes', 'Imágenes y Gráficos')">
+                    <i class="fas fa-images"></i> <span>3. Imágenes y Gráficos</span>
                 </button>
-                <button class="accordion-header" onclick="toggleAccordion('acc-evaluacion', this)">
-                    <span>4. Evaluación (Simulador)</span> <i class="fas fa-chevron-down" style="margin-left: 8px;"></i>
+                <button class="btn-recurso" onclick="mostrarRecurso('acc-evaluacion', 'Evaluación (Simulador)')">
+                    <i class="fas fa-tasks"></i> <span>4. Evaluación (Simulador)</span>
                 </button>
             </div>
 
-            <!-- ACORDEÓN: CONTENIDO TEXTOS -->
-            <div id="acc-textos" class="accordion-content">
+            <!-- CONTENIDO: TEXTOS -->
+            <div id="acc-textos" class="recurso-content hidden">
                 <div class="instruction-card" style="margin-top: 0; border: none; box-shadow: none; padding: 0;">
                     <h4 style="margin-top: 0; color: var(--primary-light); font-size: 18px;">Resumen y Síntesis</h4>
                     <div id="tema-resumen" style="line-height: 1.7; font-size: 15px; background: #F8FAFC; padding: 20px; border-radius: 8px;"></div>
@@ -397,8 +386,8 @@
                 </div>
             </div>
 
-            <!-- ACORDEÓN: CONTENIDO VIDEOS -->
-            <div id="acc-videos" class="accordion-content">
+            <!-- CONTENIDO: VIDEOS -->
+            <div id="acc-videos" class="recurso-content hidden">
                 <div class="instruction-card" style="margin-top: 0; border: none; box-shadow: none; padding: 0;">
                     <div id="tema-videos-list" class="flex-horizontal"></div>
                     
@@ -410,15 +399,15 @@
                 </div>
             </div>
 
-            <!-- ACORDEÓN: CONTENIDO IMÁGENES -->
-            <div id="acc-imagenes" class="accordion-content">
+            <!-- CONTENIDO: IMÁGENES -->
+            <div id="acc-imagenes" class="recurso-content hidden">
                 <div class="instruction-card" style="margin-top: 0; border: none; box-shadow: none; padding: 0;">
                     <div id="tema-imagenes-list" class="flex-horizontal" style="justify-content: center;"></div>
                 </div>
             </div>
 
-            <!-- ACORDEÓN: CONTENIDO EVALUACIÓN -->
-            <div id="acc-evaluacion" class="accordion-content">
+            <!-- CONTENIDO: EVALUACIÓN -->
+            <div id="acc-evaluacion" class="recurso-content hidden">
                 <div class="instruction-card" style="margin-top: 0; background: #EFF6FF; border-color: #BFDBFE;">
                     <h3 style="margin-top: 0; color: #1E3A8A;">Simulador del Tema</h3>
                     <button id="btn-generar-simulador" class="btn-primary" style="background: var(--primary-light); padding: 12px 25px; font-size: 15px;"><i class="fas fa-play"></i> Iniciar Evaluación</button>
